@@ -1,0 +1,30 @@
+#!/bin/sh
+
+PREFIX=""
+CONFIG="$PREFIX/etc/qubes/totp-auth.secrets"
+
+# PAM appends \0 at the end
+pw=$(head -c -1)
+if [ "x$pw" == "x" ]; then
+    exit 1
+fi
+
+totp=$(echo -n "$pw" | sed -e 's/^.*\([0-9][0-9][0-9][0-9][0-9][0-9]\)$/\1/')
+if [ "x$totp" == "x$pw" ]; then
+    exit 1
+fi
+totppw=$(echo -n "$pw" | sed -e 's/\([0-9][0-9][0-9][0-9][0-9][0-9]\)$//')
+totphash=$(echo -n "$totppw" | openssl dgst -sha1 -r | cut -f1 -d ' ')
+
+cfg=$(grep "^[^ ]\+ \+$totphash " "$CONFIG" | head -1)
+read name hash secret <<< $cfg
+if [ "x$hash" != "x$totphash" ]; then
+    exit 1
+fi
+
+if oathtool --totp -w 5 -b "$secret" "$totp" > /dev/null; then
+    exit 0
+fi
+
+# default: fail
+exit 1

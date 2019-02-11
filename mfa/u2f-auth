@@ -1,0 +1,45 @@
+#!/bin/sh
+
+PREFIX=""
+CFGDIR="$PREFIX/etc/qubes/u2f-keys"
+CONFIG="$PREFIX/etc/qubes/u2f-auth.secrets"
+
+
+# PAM appends \0 at the end
+pw=$(head -c -1)
+if [ "x$pw" == "x" ]; then
+    exit 1
+fi
+
+pwhash=$(echo -n "$pw" | openssl dgst -sha1 -r | cut -f1 -d ' ')
+#echo pwhash $pwhash
+
+grep "^[^ ]\+ \+$pwhash " "$CONFIG" | \
+while true ; do
+    read name hash keyhash
+    if [ "x$name" == "x" ]; then
+	exit 1
+    fi
+    if [ "x$hash" != "x$pwhash" ]; then
+        continue
+    fi
+
+    ykvm=$(echo -n "$name" | sed -e 's/^.*@//')
+    if [ "x$ykvm" == "x$name" ]; then
+        ykvm="sys-usb"
+    fi
+
+    challenge=$(u2f-server -o pam://qubes -i login -a authenticate -k "$CFGDIR/$keyhash.keyhdl" -p "$CFGDIR/$keyhash.userkey" < /dev/null)
+    response=$(qvm-run -a -u root --nogui -p $ykvm "u2f-host -o pam://qubes -a authenticate" <<< $challenge)
+
+    chlstr=$(sed -e 's/^.*"challenge": "\([^"]\+\)".*$/\1/' <<< $challenge)
+    if [ "x$chlstr" == "x$challenge" ]; then
+        exit 1
+    fi
+
+    verify=$(u2f-server -o pam://qubes -i login -a authenticate -k "$CFGDIR/$keyhash.keyhdl" -p "$CFGDIR/$keyhash.userkey" -c "$chlstr" <<< $response)
+    if [ $? == 0 ] ; then
+	exit 0
+    fi
+done
+exit $?

@@ -1,0 +1,25 @@
+
+
+current situation:
+https://www.qubes-os.org/doc/yubi-key/
+works, but involves a halfdozen "and now edit this file".
+
+
+
+a) support for totp / hotp / u2f
+b) unified config/secrets
+
+
+two pathes:
+- roll all mfa into a mfa package
+- keep separate pkgs+config for each mfa path
+
+
+current mfa-auth is still shellscript, reduces perceived security in subtle ways
+(entered PW can appear briefly in dom0 process lists)
+
+
+
+
+
+

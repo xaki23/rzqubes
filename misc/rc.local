@@ -1,0 +1,127 @@
+#!/bin/sh
+
+# This script will be executed at every VM startup, you can place your own
+# custom commands here. This include overriding some configuration in /etc,
+# starting services etc.
+#
+# You need to make this script executable to have it enabled.
+
+# Example for overriding the whole CUPS configuration:
+#  rm -rf /etc/cups
+#  ln -s /rw/config/cups /etc/cups
+#  systemctl --no-block restart cupsA
+
+exec >/tmp/_rc.local.log 2>&1
+
+if [ -d /rw/cache ] ; then 
+	rm -rf /var/cache/dnf
+	ln -s /rw/cache /var/cache/dnf
+	echo "keepcache=1" >> /etc/dnf/dnf.conf
+	rpm --rebuilddb
+fi
+
+#dnf -y install fetchmail msmtp
+#dnf -y install procmail mutt screen lynx
+#dnf -y install openssh-server
+#dnf -y install nfs-utils
+#dnf -y --nogpg --enablerepo=rpmfusion-free install mplayer
+#dnf -y install sslsplit
+# minicom borgbackup strace m4
+
+if [ -d /rw/rpm ] ; then 
+	echo Installing /rw/rpm/*.rpm
+	rpm -i /rw/rpm/*.rpm
+fi
+
+if [ -d /rw/rpc ] ; then 
+	echo Installing /rw/rpc/*
+	ln -sf /rw/rpc/* /etc/qubes-rpc/
+fi
+
+if [ ! -e /dev/xvdc2 ] ; then
+	echo Resizing swap + tmpfs
+	swapoff -a
+	blkdiscard /dev/xvdc
+	sfdisk -q /dev/xvdc <<< 1,,S
+	mkswap /dev/xvdc1
+	swapon -a
+	mount -o remount,size=10g /tmp
+	echo 90 > /proc/sys/vm/swappiness
+fi
+
+if [ -e /rw/config/swappiness ] ; then
+	echo Setting swappiness
+	cat /rw/config/swappiness > /proc/sys/vm/swappiness
+fi
+
+if [ -d /rw/sshd ] ; then
+	echo Setting up sshd
+	cp -pf /rw/sshd/* /etc/ssh/
+	chgrp ssh_keys /etc/ssh/*key
+	#echo "ListenAddress 127.0.0.1" >> /etc/ssh/sshd_config
+	#service sshd start
+fi
+
+# Uncomment next line to enable ssh agent forwarding to the named VM
+#SSH_VAULT_VM="priv-agent"
+SSH_VAULT_VM=""
+if  hostname | egrep -- "-ssh|-chat|-media" ; then
+	b=`hostname | sed -e 's/-[^-]*$//'`
+	SSH_VAULT_VM="$b-agent"
+fi
+
+if [ "$SSH_VAULT_VM" != "" ]; then
+	echo Setting up agent for $SSH_VAULT_VM
+	export SSH_SOCK=~user/.SSH_AGENT_$SSH_VAULT_VM
+	rm -f "$SSH_SOCK"
+#	sudo -u user /bin/sh -c "umask 177 && exec ncat -k -l -U '$SSH_SOCK' -c 'qrexec-client-vm $SSH_VAULT_VM qubes.SshAgent'" &
+	sudo -u user /bin/sh -c "umask 177 && exec socat -T 10 'UNIX-LISTEN:$SSH_SOCK,fork' 'EXEC:qrexec-client-vm $SSH_VAULT_VM qubes.SshAgent'" &
+	qrexec-client-vm $SSH_VAULT_VM qubes.SshAgent < /dev/null &
+fi
+
+## nfs mount
+#mkdir /dada
+#mount mu.baka:/dada /dada
+
+## webdav mount
+#echo "/backup   davuser   davpass" >> /etc/davfs2/secrets
+#mkdir /backup
+#mount.davfs https://webdav.hidrive.strato.com/users/davuser/backup /backup
+
+if [ -d /rw/cups ] ; then
+	echo Setting up cups
+	cp -fpr /rw/cups/cfg/* /etc/cups/
+	rm -rf /var/spool/cups
+	ln -sf /rw/cups/spool /var/spool/cups
+	echo "MaxJobTime 365d" >> /etc/cups/cupsd.conf
+	rm /usr/lib/systemd/system/cups.service.d/30_qubes.conf
+	systemctl daemon-reload
+	systemctl start cups
+fi
+
+#cd /home/user && sslsplit -D -W x509 -e tproxy -k ca.key -c ca.crt -F log/%T-%s-%d.log  http 127.0.0.1 2345 https 127.0.0.1 3456 &> /var/tmp/sslsplit.log &
+
+if [ -x /rw/config/qubes-firewall-user-script ] ; then
+	echo Running /rw/config/qubes-firewall-user-script
+	/rw/config/qubes-firewall-user-script
+fi
+#nft insert rule qubes-firewall forward ct state related,established accept
+#ifconfig eth0 mtu 1250
+
+
+#su - user -c "cd /home/user && sh tun &> /var/tmp/tun.log" &
+
+
+# TODO figure out official "wait for gui to be avail"
+sleep 5
+
+if hostname | egrep -- "-chat|-browser" ; then
+	echo "Starting firefox"
+	su - user -c firefox &
+fi
+
+if hostname | egrep -- "-ssh|-chat|-media" ; then
+	echo "Starting terminal"
+	su - user -c "gnome-terminal" &
+fi
+

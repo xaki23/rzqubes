@@ -1,0 +1,37 @@
+#!/bin/sh
+
+PREFIX=""
+CONFIG="$PREFIX/etc/qubes/yk-auth.secrets"
+
+
+# PAM appends \0 at the end
+pw=$(head -c -1)
+if [ "x$pw" == "x" ]; then
+    exit 1
+fi
+
+pwhash=$(echo -n "$pw" | openssl dgst -sha1 -r | cut -f1 -d ' ')
+#echo pwhash $pwhash
+
+cfg=$(grep "^[^ ]\+ \+$pwhash " "$CONFIG" | head -1)
+read name hash secret <<< $cfg
+if [ "x$hash" != "x$pwhash" ]; then
+    exit 1
+fi
+
+ykvm=$(echo -n "$name" | sed -e 's/^.*@//')
+if [ "x$ykvm" != "x$name" ]; then
+    ykvm="sys-usb"
+fi
+
+challenge=$(head -c64 /dev/urandom | xxd -c 64 -ps)
+# You may need to adjust slot number here
+response=$(qvm-run -a -u root --nogui -p $ykvm "ykchalresp -2 -x '$challenge'")
+correct_response=$(echo $challenge | xxd -r -ps | openssl dgst -sha1 -macopt "hexkey:$secret" -mac HMAC -r | cut -f1 -d ' ')
+
+if [ "x$correct_response" == "x$response" ]; then
+    exit 0
+fi
+
+# default: fail
+exit 1

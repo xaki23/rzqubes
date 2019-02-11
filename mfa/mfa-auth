@@ -1,0 +1,64 @@
+#!/bin/sh
+
+PREFIX=""
+CONFIG="$PREFIX/etc/qubes/mfa.secrets"
+
+
+# PAM appends \0 at the end
+pw=$(head -c -1)
+if [ "x$pw" == "x" ]; then
+    exit 1
+fi
+
+pwhash=$(echo -n "$pw" | openssl dgst -sha1 -r | cut -f1 -d ' ')
+#echo pwhash $pwhash
+pwexpr="$pwhash"
+
+totp=$(echo -n "$pw" | sed -e 's/^.*\([0-9][0-9][0-9][0-9][0-9][0-9]\)$/\1/')
+if [ "x$totp" != "x$pw" ]; then
+	totppw=$(echo -n "$pw" | sed -e 's/\([0-9][0-9][0-9][0-9][0-9][0-9]\)$//')
+	totphash=$(echo -n "$totppw" | openssl dgst -sha1 -r | cut -f1 -d ' ')
+    	pwexpr="$pwexpr|$totphash"
+fi
+
+cfg=$(egrep "^[^ ]+ +[^ ]+ +($pwexpr) " "$CONFIG" | head -1)
+read name type hash secret <<< $cfg
+#egrep "^[^ ]+ +[^ ]+ +($pwexpr) " "$CONFIG" | \
+#while read name type hash secret ; do
+#    echo type $type
+    case "$type" in
+	yk*)
+	    if [ "x$hash" != "x$pwhash" ]; then
+                exit 1
+		#continue
+            fi
+	    ykvm=$(echo -n "$type" | sed -e 's/^.*@//')
+
+            challenge=$(head -c64 /dev/urandom | xxd -c 64 -ps)
+            # You may need to adjust slot number here
+            response=$(qvm-run -a -u root --nogui -p $ykvm "ykchalresp -2 -x '$challenge'")
+            correct_response=$(echo $challenge | xxd -r -ps | openssl dgst -sha1 -macopt "hexkey:$secret" -mac HMAC -r | cut -f1 -d ' ')
+
+            if [ "x$correct_response" == "x$response" ]; then
+                exit 0
+            fi
+	    ;;
+	totp*)
+	    if [ "x$hash" != "x$totphash" ]; then
+                exit 1
+		#continue
+            fi
+
+	    if oathtool --totp -w 5 -b "$secret" "$totp" > /dev/null; then
+                exit 0
+            fi
+	    ;;
+	*)
+		echo "unsupported type $type"
+		exit 42
+		;;
+    esac
+#done
+
+# default: fail
+exit 1
