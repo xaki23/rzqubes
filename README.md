@@ -1,33 +1,33 @@
 # rzqubes
 Qubed SelfAdmins
  
-- tl;dr
--- desktop compartmentalization
--- "browser far from agent"
--- usable linux desktop
--- goal to make selfadmin migration about as complicated as moving
+## tl;dr
+ * desktop compartmentalization
+ * "browser far from agent"
+ * usable linux desktop
+ * goal to make selfadmin migration about as complicated as moving
    desktop to any other unfamiliar desktop oriented linux flavor
 
 
-- hardware
--- minimum
---- 2core, 8GB, 50GB+
---- basicly any NUC will do
--- recommended
---- 4core, 16GB, vt-x, ssd
---- maxed NUC
--- nicetohave
---- 4core, 32GB, vt-[dx], tpm, 2+ ssd, nvme, 2+ usb controller
---- supernuc or deskmini 110 
--- basicly anything semirecent will do
--- vt-d
---- strongly recommended, but can be used without
---- requires ignoring some errors and switching
+## hardware
+### minimum
+ * 2core, 8GB, 50GB+
+ * basicly any NUC will do
+### recommended
+ * 4core, 16GB, vt-x, ssd
+ * maxed NUC
+### nicetohave
+ * 4core, 32GB, vt-[dx], tpm, 2+ ssd, nvme, 2+ usb controller
+ * supernuc or deskmini 110 
+### basicly anything semirecent will do
+### vt-d
+ * strongly recommended, but can be used without
+ * requires ignoring some errors and switching
     all vms with hardware access to less-secure
     pv mode virtualization
---- default hw vms: sys-net sys-usb
+ * default hw vms: sys-net sys-usb
 
-- installation
+## installation
 
 -- download
 --- verification (of download)
