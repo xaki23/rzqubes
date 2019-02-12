@@ -29,103 +29,103 @@ Qubed SelfAdmins
 
 ## installation
 
--- download
---- verification (of download)
--- bootmedium
---- anything 5gb+
---- just dd to usb
---- verification (of copy)
+### download
+ * verification (of download)
+### bootmedium
+ * anything 5gb+
+ * just dd to usb
+ * verification (of copy)
 
--- boot installer (basicly fedora anaconda)
--- optional ignore no-vt-d warning
--- pick timezone / language / kbdlayout
--- optional uncheck whonix installation (old version, but you can also just install and delete it later...)
--- partitioning
---- reasonable defaults, just pick a physdev and lukspw
---- optional shrink root
---- optional raid setup
--- start install
--- pick your dom0 username ("admin") and pw (used for login/unlock)
--- wait a longish time
+### boot installer (basicly fedora anaconda)
+### optional ignore no-vt-d warning
+### pick timezone / language / kbdlayout
+### optional uncheck whonix installation (old version, but you can also just install and delete it later...)
+### partitioning
+ * reasonable defaults, just pick a physdev and lukspw
+ * optional shrink root
+ * optional raid setup
+### start install
+### pick your dom0 username ("admin") and pw (used for login/unlock)
+### wait a longish time
 
 
-- first boot
+## first boot
 
--- Q menu top-left
---- terminal emulator
---- system tools -> qube manager
+### Q menu top-left
+ * terminal emulator
+ * system tools -> qube manager
 
--- optional no-vt-d workaround
---- ignore error about sys-net start
---- start dom0 terminal
+### optional no-vt-d workaround
+ * ignore error about sys-net start
+ * start dom0 terminal
 ---- dom0$ qvm-prefs sys-net virt_mode pv
 ---- dom0$ qvm-start sys-net
---- or start qube manager and click around
+ * or start qube manager and click around
 
--- install templates
---- dom0$ sudo qubes-dom0-update --clean qubes-template-fedora-28
---- very optional templates
+### install templates
+ * dom0$ sudo qubes-dom0-update --clean qubes-template-fedora-28
+ * very optional templates
 ---- dom0$ sudo qubes-dom0-update --clean --enablerepo=qubes-templates-community-testing qubes-template-centos-7
 ---- dom0$ sudo qubes-dom0-update --clean --enablerepo=qubes-templates-itl-testing qubes-template-fedora-29
 
--- update all templates (even the ones you just installed)
---- optional dom0$ qvm-prefs template-XY maxmem 1000 
+### update all templates (even the ones you just installed)
+ * optional dom0$ qvm-prefs template-XY maxmem 1000 
 ---- can easily update all templates in parallel
 
---- qube manager: rightclick (fedora-X, debian-Y) templates - update qube
---- or dom0$ qvm-run --service template-XY qubes.InstallUpdatesGUI
+ * qube manager: rightclick (fedora-X, debian-Y) templates - update qube
+ * or dom0$ qvm-run --service template-XY qubes.InstallUpdatesGUI
 
---- optional dom0$ qvm-run --user root -p template-XY "fstrim -av"
+ * optional dom0$ qvm-run --user root -p template-XY "fstrim -av"
 ---- just needed once after install and update to get rid of pkg-blockdevice-import-crud
 ---- run it after updates completed, before shutting down the template
 
 
--- update dom0
---- dom0$ sudo qubes-dom0-update --clean
+### update dom0
+ * dom0$ sudo qubes-dom0-update --clean
 
 
--- when you are done updating (and no longer need network)
--- apply new template
---- dom0$ qubes-prefs default_template fedora-28
---- shutdown all running appvms (except dom0)
---- switch the appvms template to fedora-28 in qubes manager (and adjust memory limits as needed, see recommendations below)
---- or use qvm-prefs in dom0
+### when you are done updating (and no longer need network)
+### apply new template
+ * dom0$ qubes-prefs default_template fedora-28
+ * shutdown all running appvms (except dom0)
+ * switch the appvms template to fedora-28 in qubes manager (and adjust memory limits as needed, see recommendations below)
+ * or use qvm-prefs in dom0
 
--- reboot
+### reboot
 
 
-- second boot
+## second boot
 
--- create usb-qube
---- dom0$ sudo qubesctl state.sls qvm.sys-usb
---- dom0$ sudo qubesctl state.sls qvm.usb-keyboard
---- optional and "less secure", but easier recovery if you dont have easy access to non-usb kbd/mouse
+### create usb-qube
+ * dom0$ sudo qubesctl state.sls qvm.sys-usb
+ * dom0$ sudo qubesctl state.sls qvm.usb-keyboard
+ * optional and "less secure", but easier recovery if you dont have easy access to non-usb kbd/mouse
 ---- dom0$ qvm-prefs sys-usb autostart False
 ---- this means you need to manually start sys-usb after each boot
---- optional no-vtd-d: dom0$ qvm-prefs sys-usb virt_mode pv
---- without ps2 or nonusb notebook keyboard you have one chance to get this right
---- dom0$ qvm-start sys-usb
+ * optional no-vtd-d: dom0$ qvm-prefs sys-usb virt_mode pv
+ * without ps2 or nonusb notebook keyboard you have one chance to get this right
+ * dom0$ qvm-start sys-usb
 
--- optional restore backup
--- optional mirage fw + agent
--- optional aem/fde/mfa
---- dom0$ qvm-create -l purple -t debian-9 build-mirage-deb9
---- dom0$ qvm-run build-mirage gnome-terminal &
+### optional restore backup
+### optional mirage fw + agent
+### optional aem/fde/mfa
+ * dom0$ qvm-create -l purple -t debian-9 build-mirage-deb9
+ * dom0$ qvm-run build-mirage gnome-terminal &
 ---- sudo sh mirage.sh
 
--- optional import old desktop
---- create an import/legacy appvm, attach old FS, copy over home/data as needed
---- you can basicly keep working "as is" out of that appvm
---- move out parts of your workflow to other vms at your own pace
+### optional import old desktop
+ * create an import/legacy appvm, attach old FS, copy over home/data as needed
+ * you can basicly keep working "as is" out of that appvm
+ * move out parts of your workflow to other vms at your own pace
 
 
-- general orientation
+## general orientation
 
--- things to try in a dom0 console:
---- qvm-ls, qvm-prefs, qvm-start, qvm-shutdown, qvm-kill, xentop, xl list, xl console 
+### things to try in a dom0 console:
+ * qvm-ls, qvm-prefs, qvm-start, qvm-shutdown, qvm-kill, xentop, xl list, xl console 
 
--- qubes manager
---- default vms
+### qubes manager
+ * default vms
 ---- services
 ----- sys-net
 ----- sys-firewall
@@ -134,39 +134,39 @@ Qubed SelfAdmins
 ----- debian + fedora
 ---- untrusted
 
--- vm creation/clone/destroy
---- easy/quick enough to "just do it"
--- cut-n-paste
---- like regular c-n-p with an additional shift-ctrl-c / shift-ctrl-v step for copying between vm-cnp-buffer and inter-vm-cnp-buffer
--- vm disk layout
---- root
+### vm creation/clone/destroy
+ * easy/quick enough to "just do it"
+### cut-n-paste
+ * like regular c-n-p with an additional shift-ctrl-c / shift-ctrl-v step for copying between vm-cnp-buffer and inter-vm-cnp-buffer
+### vm disk layout
+ * root
 ---- inherited from template (writeable snapshot at boot)
---- private
+ * private
 ---- mounted on /rw, contains /home and /usr/local
---- volatile
+ * volatile
 ---- swap and writeable root scratchspace
 ---- discarded on each appvm start
 ---- in default configuration 9GB free for additional swap or tmpfs
 
 
--- scaling
---- browser vm 2GB-4GB ram
---- ssh vm 500MB-1GB ram
---- hvm vm +150MB ram +10% cpu fuer stub
---- services linux 500MB-1GB ram
---- services mirage 20MB-40MB ram
---- template 10GB disk
+### scaling
+ * browser vm 2GB-4GB ram
+ * ssh vm 500MB-1GB ram
+ * hvm vm +150MB ram +10% cpu fuer stub
+ * services linux 500MB-1GB ram
+ * services mirage 20MB-40MB ram
+ * template 10GB disk
 
--- virt modes
---- pv == software virtualization (less secure)
+### virt modes
+ * pv == software virtualization (less secure)
 ---- requires guest os with pv support
 ---- do not use
 ----- exceptions no-vt-d and special guests (mirage,bsd)
---- pvh == hardware virtualized memory with software drivers
+ * pvh == hardware virtualized memory with software drivers
 ---- requires cpu vt-x/SLAT support
 ---- requires guest os with pvh support
 ---- best+default for non-hardware vms
---- hvm == full hardware virtualization
+ * hvm == full hardware virtualization
 ---- usecase exotic guests (no xen support required)
 ---- usecase vms with delegated hardware (net, usb)
 ----- requires system with vt-d/IOMMU support 
@@ -176,65 +176,61 @@ Qubed SelfAdmins
 
 
 
-- qubes layout
+## qubes layout
 
--- scopes like work, priv, build, onenetwork
---- per scope colors: on orange, work blue, priv yellow, build pink ... 
--- subname according to function
+### scopes like work, priv, build, onenetwork
+ * per scope colors: on orange, work blue, priv yellow, build pink ... 
+### subname according to function
 
---- work-agent
+ * work-agent
 ---- not network connected
---- work-ssh
---- work-mail
+ * work-ssh
+ * work-mail
 ---- optional mua/mta separation
---- work-browser
+ * work-browser
 ---- optional int/ext separation
---- work-vault
+ * work-vault
 ---- not network connected
 
---- on-tun
---- on-ssh
----- optional on-agent
---- on-browser
---- on-rdp
+ * on-tun
+ * on-ssh
+ * on-browser
+ * on-rdp
+ * optional on-agent
 
---- srv-cups
+ * srv-cups
 
---- build-qubes (feodra templated)
---- build-mirage (debian templated)
---- build-solaris
----- can basicly run anything in hvm mode
+ * build-qubes (feodra templated)
+ * build-mirage (debian templated)
+ * build-solaris (can basicly run anything in hvm mode)
 
---- priv
----- optional agent/ssh/browser separation like for work-*
+ * priv (optional agent/ssh/browser separation like for work-*)
 
---- untrusted
----- general browser and traceroute/dig usage
+ * untrusted (general browser and traceroute/dig usage)
 
 
 
 
-- advanced
--- dvms
--- split ssh
--- split gpg
--- split usb
--- storage pools
---- discard
---- nvme
+## advanced
+### dvms
+### split ssh
+### split gpg
+### split usb
+### storage pools
+ * discard
+ * nvme
 ---- usecase template
 ---- usecase volatile
 
 
-- todo
--- common rc.local
--- whonix/tor evaluation
---
+## todo
+### common rc.local
+### whonix/tor evaluation
 
-- standard problems
--- crashed netvm
--- ipc limits
--- lvm_thin
+## standard problems
+### crashed netvm
+### ipc limits
+### lvm_thin
 
 
 
